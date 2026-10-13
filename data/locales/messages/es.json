@@ -829,6 +829,7 @@
   "This location doesn't support Trash. This item will be permanently deleted. This action cannot be undone.": "Esta ubicación no admite la papelera. Este elemento se eliminará permanentemente. Esta acción no se puede deshacer.",
   "This model exceeds the 2 million triangle preview limit. Try a lower-detail version.": "Este modelo supera el límite de vista previa de 2 millones de triángulos. Prueba una versión con menos detalle.",
   "This release has no signed update manifest. Choose a newer release or download it manually.": "Esta versión no tiene un manifiesto de actualización firmado. Elige una versión más reciente o descárgala manualmente.",
+  "This release is not newer than the installed version.": "Esta versión no es más reciente que la versión instalada.",
   "This runs “%{value1}” on %{value2}.": "Esto ejecuta «%{value1}» en %{value2}.",
   "This volume’s password is saved. Locking will forget it, and you’ll need to enter it again to unlock.": "La contraseña de este volumen está guardada. Al bloquearlo se olvidará y tendrás que volver a introducirla para desbloquearlo.",
   "Those credentials weren’t accepted. Check %{value1} and try again.": "No se aceptaron esas credenciales. Comprueba %{value1} e inténtalo de nuevo.",

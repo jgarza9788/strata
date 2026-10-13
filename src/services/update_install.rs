@@ -20,7 +20,7 @@ use serde::Deserialize;
 use crate::services::{InstallSource, ensure_self_managed, installed_executable};
 
 use super::network_error::NetworkError;
-use super::release_channel::Version;
+use super::release_channel::{BuildKind, Version};
 
 mod archive;
 mod command;
@@ -157,6 +157,20 @@ fn verified_download_url(request: &InstallRequest) -> Result<String, String> {
         ));
     }
     Ok(expected)
+}
+
+/// A stable build only moves forward. A prerelease may roll back to a final release.
+fn ensure_not_a_downgrade(request: &InstallRequest, installed: &Version) -> Result<(), String> {
+    match request.tag.strip_prefix('v').and_then(Version::parse) {
+        Some(requested)
+            if installed.build_kind() != BuildKind::Stable || requested > *installed =>
+        {
+            Ok(())
+        }
+        _ => Err(crate::i18n::tr(
+            "This release is not newer than the installed version.",
+        )),
+    }
 }
 
 fn is_release_token(value: &str) -> bool {
@@ -541,6 +555,7 @@ fn perform_install(
     // layer of defense -- e.g. against a leftover directory from a
     // hard-killed previous process.
     let download_url = verified_download_url(request)?;
+    ensure_not_a_downgrade(request, &crate::build_info::installed_version())?;
     let workdir = stage_workdir(exe_dir)?;
     try_install(
         request,

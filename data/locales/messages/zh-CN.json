@@ -829,6 +829,7 @@
   "This location doesn't support Trash. This item will be permanently deleted. This action cannot be undone.": "此位置不支持回收站。此项目将被永久删除。此操作无法撤销。",
   "This model exceeds the 2 million triangle preview limit. Try a lower-detail version.": "此模型超出 200 万个三角形的预览上限。请尝试较低精度的版本。",
   "This release has no signed update manifest. Choose a newer release or download it manually.": "此版本没有已签名的更新清单。请选择更新的版本，或手动下载。",
+  "This release is not newer than the installed version.": "此版本不比已安装的版本更新。",
   "This runs “%{value1}” on %{value2}.": "将对 %{value2} 运行“%{value1}”。",
   "This volume’s password is saved. Locking will forget it, and you’ll need to enter it again to unlock.": "已保存此卷的密码。锁定后将清除该密码，下次解锁时需要重新输入。",
   "Those credentials weren’t accepted. Check %{value1} and try again.": "凭据未通过验证。请检查以下信息后重试：%{value1}。",

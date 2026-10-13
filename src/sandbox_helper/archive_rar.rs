@@ -224,7 +224,7 @@ fn extract(
         }
         headers_encrypted = data.flags & native::ROADF_ENCHEADERS != 0;
         data.open_result as i32
-    })?;
+    });
     let decrypting_headers = password.is_some() && headers_encrypted;
     let archive = if handle.is_null() {
         None
@@ -237,7 +237,7 @@ fn extract(
             native::RARSetCallback(archive.0, None, 0);
         }
     }
-    decode_result(opened, decrypting_headers)?;
+    decode_result(opened?, decrypting_headers)?;
     let archive = archive.ok_or_else(|| "Unable to open RAR archive".to_owned())?;
     loop {
         let mut header = native::HeaderDataEx::default();

@@ -10,14 +10,15 @@ use std::{
     time::{Duration, Instant},
 };
 
+use super::super::release_channel::Version;
 use super::{
     APPLICATION_ICON, DESKTOP_ENTRY, InstallCancel, InstallRequest, InstallStop, UpdateInstall,
     UpdateMethod, aur_repository_version_from_response, desktop_entry_with_exec,
-    download::DownloadTimeouts, download_to_file_bounded, download_to_file_with, is_old_instance,
-    package_repository_version_for, parse_aur_package_version, parse_package_version,
-    refresh_desktop_metadata, repository_database_version, restore_rollback, retire_old_instances,
-    stage_binary_path, stage_rollback, stage_workdir, update_method_for, verified_download_url,
-    verify_staged_binary,
+    download::DownloadTimeouts, download_to_file_bounded, download_to_file_with,
+    ensure_not_a_downgrade, is_old_instance, package_repository_version_for,
+    parse_aur_package_version, parse_package_version, refresh_desktop_metadata,
+    repository_database_version, restore_rollback, retire_old_instances, stage_binary_path,
+    stage_rollback, stage_workdir, update_method_for, verified_download_url, verify_staged_binary,
 };
 
 #[test]
@@ -467,6 +468,20 @@ fn request(tag: &str, asset: &str, advertised: &str) -> InstallRequest {
         asset_name: asset.to_owned(),
         advertised_url: advertised.to_owned(),
     }
+}
+
+#[test]
+fn a_stable_build_only_installs_newer_releases_while_a_prerelease_may_roll_back() {
+    let version = |text: &str| Version::parse(text).expect("version");
+    let stable = version("1.0.0");
+    for (tag, allowed) in [("v1.0.1", true), ("v1.0.0", false), ("v0.9.0", false)] {
+        let result = ensure_not_a_downgrade(&request(tag, "x", "y"), &stable);
+        assert_eq!(result.is_ok(), allowed, "{tag} on stable 1.0.0");
+    }
+    assert!(ensure_not_a_downgrade(&request("not-a-version", "x", "y"), &stable).is_err());
+
+    let beta = version("1.1.0-beta.1");
+    assert!(ensure_not_a_downgrade(&request("v1.0.0", "x", "y"), &beta).is_ok());
 }
 
 const TAG: &str = "v0.11.2";

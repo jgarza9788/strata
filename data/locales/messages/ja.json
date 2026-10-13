@@ -829,6 +829,7 @@
   "This location doesn't support Trash. This item will be permanently deleted. This action cannot be undone.": "この場所はゴミ箱に対応していません。この項目は完全に削除されます。この操作は元に戻せません。",
   "This model exceeds the 2 million triangle preview limit. Try a lower-detail version.": "このモデルはプレビューの上限である 200 万個の三角形を超えています。詳細度の低いバージョンをお試しください。",
   "This release has no signed update manifest. Choose a newer release or download it manually.": "このリリースには署名済みの更新マニフェストがありません。新しいリリースを選ぶか、手動でダウンロードしてください。",
+  "This release is not newer than the installed version.": "このリリースはインストール済みのバージョンより新しくありません。",
   "This runs “%{value1}” on %{value2}.": "%{value2}で「%{value1}」を実行します。",
   "This volume’s password is saved. Locking will forget it, and you’ll need to enter it again to unlock.": "このボリュームのパスワードは保存されています。ロックすると破棄され、ロック解除するには再入力が必要になります。",
   "Those credentials weren’t accepted. Check %{value1} and try again.": "認証情報が受け入れられませんでした。%{value1}を確認して再試行してください。",

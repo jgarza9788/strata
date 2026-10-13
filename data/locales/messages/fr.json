@@ -829,6 +829,7 @@
   "This location doesn't support Trash. This item will be permanently deleted. This action cannot be undone.": "Cet emplacement ne prend pas en charge la corbeille. Cet élément sera supprimé définitivement. Cette action est irréversible.",
   "This model exceeds the 2 million triangle preview limit. Try a lower-detail version.": "Ce modèle dépasse la limite d’aperçu de 2 millions de triangles. Essayez une version moins détaillée.",
   "This release has no signed update manifest. Choose a newer release or download it manually.": "Cette version n’a pas de manifeste de mise à jour signé. Choisissez une version plus récente ou téléchargez-la manuellement.",
+  "This release is not newer than the installed version.": "Cette version n’est pas plus récente que la version installée.",
   "This runs “%{value1}” on %{value2}.": "Cette commande exécute « %{value1} » sur %{value2}.",
   "This volume’s password is saved. Locking will forget it, and you’ll need to enter it again to unlock.": "Le mot de passe de ce volume est enregistré. Le verrouillage l’oubliera et vous devrez le saisir à nouveau pour déverrouiller.",
   "Those credentials weren’t accepted. Check %{value1} and try again.": "Ces identifiants n’ont pas été acceptés. Vérifiez %{value1} et réessayez.",
