@@ -546,6 +546,23 @@ fn a_planted_scratch_base_is_refused() {
 }
 
 #[test]
+fn a_planted_runtime_root_is_refused() {
+    let fixture = tempfile::tempdir().expect("fixture");
+    let elsewhere = fixture.path().join("elsewhere");
+    fs::create_dir_all(&elsewhere).expect("directory");
+    let root = fixture.path().join("strata");
+    std::os::unix::fs::symlink(&elsewhere, &root).expect("symlink");
+    assert!(
+        create_run_directory(&root).is_err(),
+        "a linked runtime root is refused instead of followed"
+    );
+    assert!(
+        elsewhere.read_dir().expect("directory").next().is_none(),
+        "nothing is written through the link"
+    );
+}
+
+#[test]
 fn the_private_run_directory_is_owner_only() {
     let fixture = tempfile::tempdir().expect("fixture");
     let directory = create_run_directory(fixture.path()).expect("run directory");

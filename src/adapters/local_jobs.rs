@@ -503,32 +503,12 @@ fn json_string(value: &str) -> String {
     escaped
 }
 
-// The temporary-directory fallback may be shared with other users.
+// The temporary-directory fallback may be shared with other users, so every
+// level under it must be a real directory this user owns.
 fn create_run_directory(runtime_root: &Path) -> io::Result<PathBuf> {
+    ensure_owned_directory(runtime_root)?;
     let base = runtime_root.join("actions");
-    match fs::symlink_metadata(&base) {
-        Ok(metadata) => {
-            if !metadata.file_type().is_dir() {
-                return Err(io::Error::other(format!(
-                    "{} exists and is not a directory",
-                    base.display()
-                )));
-            }
-            if metadata.uid() != rustix::process::geteuid().as_raw() {
-                return Err(io::Error::other(format!(
-                    "{} is not owned by this user",
-                    base.display()
-                )));
-            }
-        }
-        Err(error) if error.kind() == io::ErrorKind::NotFound => {
-            fs::DirBuilder::new()
-                .recursive(true)
-                .mode(0o700)
-                .create(&base)?;
-        }
-        Err(error) => return Err(error),
-    }
+    ensure_owned_directory(&base)?;
     for _ in 0..64 {
         let candidate = base.join(format!("{}-{}", std::process::id(), next_run_sequence()));
         match fs::DirBuilder::new().mode(0o700).create(&candidate) {
@@ -540,6 +520,31 @@ fn create_run_directory(runtime_root: &Path) -> io::Result<PathBuf> {
     Err(io::Error::other(
         "Unable to allocate a private working directory",
     ))
+}
+
+fn ensure_owned_directory(path: &Path) -> io::Result<()> {
+    match fs::symlink_metadata(path) {
+        Ok(metadata) => {
+            if !metadata.file_type().is_dir() {
+                return Err(io::Error::other(format!(
+                    "{} exists and is not a directory",
+                    path.display()
+                )));
+            }
+            if metadata.uid() != rustix::process::geteuid().as_raw() {
+                return Err(io::Error::other(format!(
+                    "{} is not owned by this user",
+                    path.display()
+                )));
+            }
+            Ok(())
+        }
+        Err(error) if error.kind() == io::ErrorKind::NotFound => fs::DirBuilder::new()
+            .recursive(true)
+            .mode(0o700)
+            .create(path),
+        Err(error) => Err(error),
+    }
 }
 
 fn next_run_sequence() -> u64 {
