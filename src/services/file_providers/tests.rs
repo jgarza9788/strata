@@ -39,6 +39,20 @@ fn discovery_refuses_symlinks_writable_registration_and_relative_programs() {
     assert!(discover(second.path()).is_empty());
 }
 #[test]
+fn a_symlinked_program_is_launched_by_its_vetted_target() {
+    let t = tempfile::tempdir().expect("temp");
+    let target = fs::canonicalize(python()).expect("python target");
+    let link = t.path().join("provider-link");
+    symlink(&target, &link).expect("symlink");
+    registration(t.path(), vec![link.to_str().expect("utf-8").to_owned()]);
+    let found = discover(t.path());
+    assert_eq!(found.len(), 1);
+    assert_eq!(
+        found[0].manifest.command[0],
+        target.to_str().expect("utf-8")
+    );
+}
+#[test]
 fn registration_accepts_optional_names_and_rejects_invalid_display_text() {
     let root = tempfile::tempdir().expect("registration fixture");
     registration(root.path(), vec![python()]);

@@ -51,7 +51,7 @@ fn load(dir: &Path) -> Option<Registration> {
         return None;
     }
     let data = read_limited(&dir.join("provider.json"), 16384)?;
-    let manifest: Manifest = serde_json::from_slice(&data).ok()?;
+    let mut manifest: Manifest = serde_json::from_slice(&data).ok()?;
     if manifest.version != 1
         || !slug(&manifest.id)
         || manifest.name.as_ref().is_some_and(|name| {
@@ -81,6 +81,8 @@ fn load(dir: &Path) -> Option<Registration> {
     if !trusted(&exe, false) {
         return None;
     }
+    // Launch the file that was vetted, not a symlink that could be repointed later.
+    manifest.command[0] = exe.to_str()?.to_owned();
     let mut icons = BTreeMap::new();
     for (id, filename) in &manifest.icons {
         if !slug(id) || Path::new(filename).components().count() != 1 || !filename.ends_with(".png")
