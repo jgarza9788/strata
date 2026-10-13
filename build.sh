@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Builds Strata on the host. Usage: ./build.sh [--debug] [--no-rar] [extra cargo args...]
+# Builds Strata on the host and installs a release build to ~/.local/bin/strata.
+# Usage: ./build.sh [--debug] [--no-rar] [--no-install] [extra cargo args...]
 set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
@@ -7,13 +8,15 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 profile=(--release)
 profile_dir=release
 features=()
+install_binary=1
 
 while (( $# > 0 )); do
   case "$1" in
     --debug) profile=(); profile_dir=debug ;;
     --no-rar) features=(--no-default-features) ;;
+    --no-install) install_binary=0 ;;
     -h|--help)
-      sed -n '2p' "$0" | sed 's/^# //'
+      sed -n '2,3p' "$0" | sed 's/^# //'
       exit 0
       ;;
     *) break ;;
@@ -39,3 +42,9 @@ fi
 cargo build --locked "${profile[@]}" "${features[@]}" "$@"
 
 echo "Built target/${profile_dir}/strata"
+
+if [[ $profile_dir == release && $install_binary == 1 ]]; then
+  # install replaces the file rather than writing into it, so a running Strata is not disturbed.
+  install -Dm755 target/release/strata "$HOME/.local/bin/strata"
+  echo "Installed ~/.local/bin/strata"
+fi
