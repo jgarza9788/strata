@@ -9,12 +9,47 @@ use crate::{
     model::{EntryKind, FileEntry, Location, MetadataValue},
     services::{NavigationHistory, SearchItem},
     ui::{
-        browser::BrowserView, preferences::PreferenceManager, preview::PreviewDrawer,
-        search::SearchDialog,
+        browser::BrowserView, command_palette::CommandPalette, preferences::PreferenceManager,
+        preview::PreviewDrawer, search::SearchDialog,
     },
 };
 
 use super::WindowContent;
+
+pub(super) fn install_palette(window: &gtk::ApplicationWindow, content: &WindowContent) {
+    let root = content.blurred_root.downgrade();
+    let dismiss = Rc::new(move || {
+        if let Some(root) = root.upgrade() {
+            root.set_blurred(false);
+        }
+    });
+    let target = window.downgrade();
+    let run = Rc::new(move |action: &'static str| {
+        if let Some(window) = target.upgrade() {
+            let _ =
+                gtk::prelude::WidgetExt::activate_action(&window, &format!("win.{action}"), None);
+        }
+    });
+    let palette = CommandPalette::new(run, dismiss);
+    content.overlay.add_overlay(&palette.widget());
+    let own_layer = palette.widget();
+    let root = content.blurred_root.downgrade();
+    super::add_guarded_window_action(
+        window,
+        &content.actions,
+        "command-palette",
+        &content.browser,
+        Some(own_layer),
+        move || {
+            if palette.is_visible() {
+                palette.hide();
+            } else if let Some(root) = root.upgrade() {
+                root.set_blurred(true);
+                palette.show();
+            }
+        },
+    );
+}
 
 pub(super) fn install(
     window: &gtk::ApplicationWindow,

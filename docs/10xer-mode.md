@@ -130,7 +130,7 @@ drawer still open, and run there on the previewed item:
   (a document keeps **Ctrl+C**), **Ctrl+Shift+N**, **Alt+Enter**, and
   **Menu** / **Shift+F10**.
 
-Window commands (**Q**, **F1**, **F5**, **Ctrl+K**, **Ctrl+L**, **Ctrl+,**,
+Window commands (**Q**, **F1**, **F5**, **Ctrl+K**, **Ctrl+P**, **Ctrl+L**, **Ctrl+,**,
 **Ctrl+1**–**3**, **Ctrl+H**, **Ctrl+N**, **Ctrl+Shift+B**, **Ctrl+Shift+M**,
 undo / redo, and text size) work without moving the keys. Any other key is
 swallowed. Inside a text field only **F1** and **Ctrl+Shift+M** still work;
@@ -712,6 +712,7 @@ These GUI conventions stay available alongside the Yazi verbs:
 | **F5** | Refresh |
 | **Ctrl+L** | Edit the location bar |
 | **Ctrl+K** | Global search |
+| **Ctrl+P** | Command palette |
 | **Ctrl+1** / **2** / **3** | Columns / Icons / List |
 | **Ctrl+Shift+N** | New folder |
 | **Ctrl+Alt+N** | New folder containing the selection |

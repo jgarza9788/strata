@@ -274,14 +274,19 @@ and `xkeysym` duplicate types GDK already provides.
 
 ### Window actions
 
-Search (**Ctrl+K**), jump to folder (**Ctrl+Shift+K**), open terminal
-(**Ctrl+Alt+T**), refresh (**F5**), and arrow scope (**Ctrl+\\**) are bindings in
+Search (**Ctrl+K**), command palette (**Ctrl+P**), jump to folder
+(**Ctrl+Shift+K**), open terminal (**Ctrl+Alt+T**), refresh (**F5**), and arrow
+scope (**Ctrl+\\**) are bindings in
 the window dispatcher, not GTK application accelerators. The dispatcher checks
 them after its own stages yield the key and activates the same guarded `win.*`
 actions; the key is consumed whenever the action is enabled.
 `add_guarded_window_action` still decides whether they run while a modal or an
 inline edit owns input. 10xer mode leaves jump to folder, open terminal, and
 arrow scope unbound, which the dispatcher checks when the key arrives.
+
+The command palette lists the window actions that have a `win.*` action, filters
+them by word prefix or substring in English or the interface language, and runs
+the chosen one after the palette closes. **Ctrl+P** or **Esc** closes it.
 
 ### Text fields
 

@@ -198,8 +198,9 @@ fn control_digits_select_each_browser_presentation() {
     assert_eq!(browser_mode_for_digit(&press(Key::_1, NONE)), None);
 }
 
-const WINDOW_SHORTCUTS: [(Key, ModifierType, &str); 5] = [
+const WINDOW_SHORTCUTS: [(Key, ModifierType, &str); 6] = [
     (Key::k, CONTROL, "search"),
+    (Key::p, CONTROL, "command-palette"),
     (Key::K, CONTROL.union(SHIFT), "jump-folder"),
     (Key::t, CONTROL.union(ALT), "open-terminal"),
     (Key::F5, NONE, "refresh"),
@@ -333,7 +334,7 @@ fn assert_window_actions(
     tenxer: bool,
 ) {
     for (key, modifiers, action) in WINDOW_SHORTCUTS {
-        let bound = !tenxer || matches!(action, "search" | "refresh");
+        let bound = !tenxer || matches!(action, "search" | "command-palette" | "refresh");
         assert_eq!(
             dispatch(window, key, modifiers),
             bound,

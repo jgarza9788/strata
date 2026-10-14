@@ -9,6 +9,7 @@ mod chooser;
 mod close_guard;
 mod collection_edit;
 mod collection_interaction;
+mod command_palette;
 mod controls;
 mod desktop_integration;
 mod document_media;

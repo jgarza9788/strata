@@ -40,8 +40,9 @@ type KeyResult = Option<Propagation>;
 
 /// Window actions that run once every other stage yields the key. The flag
 /// marks those 10xer mode leaves unbound.
-const WINDOW_ACTIONS: [(Binding, &str, bool); 5] = [
+const WINDOW_ACTIONS: [(Binding, &str, bool); 6] = [
     (SEARCH, "search", false),
+    (COMMAND_PALETTE, "command-palette", false),
     (JUMP_TO_FOLDER, "jump-folder", true),
     (TERMINAL, "open-terminal", true),
     (REFRESH, "refresh", false),

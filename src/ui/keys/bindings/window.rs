@@ -22,6 +22,7 @@ catalog! {
         CONTEXT_MENU_F10: Binding = Binding::shift(Key::F10);
 
         SEARCH: Binding = Binding::ctrl(Key::k);
+        COMMAND_PALETTE: Binding = Binding::ctrl(Key::p);
         LOCATION: Binding = Binding::ctrl(Key::l);
         REFRESH: Binding = Binding::plain(Key::F5);
         HIDDEN_FILES: Binding = Binding::ctrl(Key::h);

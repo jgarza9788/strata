@@ -913,6 +913,7 @@ fn tenxer_mode_rows(
 const DEFAULT_TOOLS: &[Shortcut] = &[
     row(One(FILTER), "Filter the current pane"),
     row(One(SEARCH), "Open global search"),
+    row(One(COMMAND_PALETTE), "Open command palette"),
     row(One(JUMP_TO_FOLDER), "Jump to a recent folder"),
     row(
         One(OPEN_CONTAINING_FOLDER),
@@ -1068,6 +1069,7 @@ fn tenxer_tools(mode: BrowserMode, chooser: bool) -> Vec<Shortcut> {
         ]);
     }
     shortcuts.extend_from_slice(&[
+        row(One(COMMAND_PALETTE), "Open command palette"),
         row(One(LOCATION), "Edit the location"),
         row(One(REFRESH), "Refresh"),
         row(

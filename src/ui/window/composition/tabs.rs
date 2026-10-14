@@ -121,6 +121,7 @@ impl TabWindow {
             }
             for name in [
                 "search",
+                "command-palette",
                 "jump-folder",
                 "refresh",
                 "open-terminal",

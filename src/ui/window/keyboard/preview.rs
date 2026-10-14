@@ -300,6 +300,7 @@ fn passes_through_preview(press: &KeyPress) -> bool {
         REFERENCE,
         REFRESH,
         SEARCH,
+        COMMAND_PALETTE,
         LOCATION,
         SETTINGS,
         HIDDEN_FILES,
