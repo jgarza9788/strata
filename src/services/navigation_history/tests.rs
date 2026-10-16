@@ -202,3 +202,31 @@ fn jump_queries_take_fzf_terms_across_the_whole_path() {
         .collect::<Vec<_>>();
     assert_eq!(recent, [notes]);
 }
+
+#[test]
+fn external_folders_merge_into_ranking_and_keep_the_higher_frecency() {
+    let directory = tempfile::tempdir().expect("history directory");
+    let history = NavigationHistory::open(directory.path().join("history.json"));
+    let now = 10 * WEEK_SECONDS;
+    let visited = PathBuf::from("/work/strata");
+    history.record_at(&visited, now - 10);
+    let external = [
+        (PathBuf::from("/home/me/projects/website"), 50.0),
+        (visited.clone(), 200.0),
+        (PathBuf::from("relative/ignored"), 900.0),
+        (PathBuf::from("/nan/ignored"), f64::NAN),
+    ];
+
+    let all = history.search_with_at("", &external, now);
+    let paths = all
+        .iter()
+        .map(|item| item.path.as_path())
+        .collect::<Vec<_>>();
+    assert_eq!(
+        paths,
+        [visited.as_path(), Path::new("/home/me/projects/website")]
+    );
+
+    let found = history.search_with_at("webs", &external, now);
+    assert_eq!(found[0].path, Path::new("/home/me/projects/website"));
+}

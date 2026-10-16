@@ -2932,6 +2932,7 @@ dependencies = [
  "poppler-rs",
  "pulldown-cmark",
  "quick-xml",
+ "regex",
  "resvg",
  "ring",
  "rquickjs",

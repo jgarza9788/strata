@@ -92,7 +92,7 @@ impl WindowContent {
         preferences: &Rc<PreferenceManager>,
     ) -> UpdateNoticeHandler {
         search::install(window, self, preferences);
-        search::install_palette(window, self);
+        search::install_palette(window, self, preferences);
         install_browser_actions(window, &self.actions, &self.browser, preferences);
         let notice = settings::install(window, self, preferences);
         let click_browser = self.browser.clone();

@@ -69,7 +69,7 @@ fn format_highlighted_markup(display_name: &str, match_len: usize) -> String {
     )
 }
 
-fn compact_hint(path: &Path, home: &Path) -> String {
+pub(crate) fn compact_hint(path: &Path, home: &Path) -> String {
     if path == home {
         return "~".to_owned();
     }
@@ -491,6 +491,82 @@ impl PathCompletion {
     }
 }
 
+/// The directory a typed path lists, the leaf typed after its last `/`, and the
+/// text that precedes a completed child name.
+pub(crate) struct PathQuery<'a> {
+    pub(crate) base_dir: PathBuf,
+    pub(crate) leaf: &'a str,
+    pub(crate) prefix: String,
+}
+
+/// Splits trimmed, non-empty input at its last `/`. Relative input needs
+/// `current_dir`; `~` shorthand other than `~/` is unsupported.
+pub(crate) fn split_path_input<'a>(
+    input: &'a str,
+    current_dir: Option<&Path>,
+    home: &Path,
+) -> Option<PathQuery<'a>> {
+    if let Some(relative) = input.strip_prefix("~/") {
+        let (base_dir, leaf, prefix) = if relative.ends_with('/') {
+            (
+                home.join(relative.trim_start_matches('/')),
+                "",
+                format!("~/{relative}"),
+            )
+        } else if let Some((parent_rel, leaf)) = relative.rsplit_once('/') {
+            (
+                home.join(parent_rel.trim_start_matches('/')),
+                leaf,
+                format!("~/{parent_rel}/"),
+            )
+        } else {
+            (home.to_path_buf(), relative, "~/".to_owned())
+        };
+        return Some(PathQuery {
+            base_dir,
+            leaf,
+            prefix,
+        });
+    }
+    if input.starts_with('~') {
+        return None;
+    }
+    if let Some(stripped) = input.strip_prefix('/') {
+        let (base_dir, leaf, prefix) = if input == "/" {
+            (PathBuf::from("/"), "", "/".to_owned())
+        } else if input.ends_with('/') {
+            (PathBuf::from(input), "", input.to_owned())
+        } else if let Some((parent_part, leaf)) = input.rsplit_once('/') {
+            if parent_part.is_empty() {
+                (PathBuf::from("/"), leaf, "/".to_owned())
+            } else {
+                (PathBuf::from(parent_part), leaf, format!("{parent_part}/"))
+            }
+        } else {
+            (PathBuf::from("/"), stripped, "/".to_owned())
+        };
+        return Some(PathQuery {
+            base_dir,
+            leaf,
+            prefix,
+        });
+    }
+    let current = current_dir?;
+    let (base_dir, leaf) = if input.ends_with('/') {
+        (current.join(input), "")
+    } else if let Some((parent_part, leaf)) = input.rsplit_once('/') {
+        (current.join(parent_part), leaf)
+    } else {
+        (current.to_path_buf(), input)
+    };
+    let prefix = directory_prefix(&base_dir);
+    Some(PathQuery {
+        base_dir,
+        leaf,
+        prefix,
+    })
+}
+
 pub(crate) fn suggest_completions(
     input: &str,
     current_dir: Option<&Path>,
@@ -515,141 +591,56 @@ pub(crate) fn suggest_completions(
         }];
     }
 
-    if let Some(relative) = input.strip_prefix("~/") {
-        let (base_dir, leaf_prefix, prepend) = if relative.ends_with('/') {
-            (
-                home.join(relative.trim_start_matches('/')),
-                "",
-                format!("~/{relative}"),
-            )
-        } else if let Some((parent_rel, leaf)) = relative.rsplit_once('/') {
-            (
-                home.join(parent_rel.trim_start_matches('/')),
-                leaf,
-                format!("~/{parent_rel}/"),
-            )
-        } else {
-            (home.to_path_buf(), relative, "~/".to_owned())
-        };
-        let hint = compact_hint(&base_dir, home);
-        let candidates = list_directory_candidates(
-            &base_dir,
-            leaf_prefix,
-            &prepend,
-            &hint,
-            leaf_prefix.chars().count(),
-            show_hidden_pref,
-        );
-        let rel_trimmed = relative.trim_start_matches('/');
-        let full_path = home.join(rel_trimmed);
-        if candidates.len() <= 1 && full_path.is_dir() && !rel_trimmed.is_empty() {
-            let child_hint = compact_hint(&full_path, home);
-            let child_prepend = format!("~/{}/", rel_trimmed.trim_end_matches('/'));
-            let children = list_directory_candidates(
-                &full_path,
-                "",
-                &child_prepend,
-                &child_hint,
-                0,
-                show_hidden_pref,
-            );
-            if !children.is_empty() {
-                return children;
-            }
-        }
-        return candidates;
-    }
-
-    if input.starts_with('~') {
+    let Some(query) = split_path_input(input, current_dir, home) else {
         return Vec::new();
-    }
-
-    if let Some(stripped) = input.strip_prefix('/') {
-        let (base_dir, leaf_prefix, prepend) = if input == "/" {
-            (PathBuf::from("/"), "", "/".to_owned())
-        } else if input.ends_with('/') {
-            (PathBuf::from(input), "", input.to_owned())
-        } else if let Some((parent_part, leaf)) = input.rsplit_once('/') {
-            let base = if parent_part.is_empty() {
-                PathBuf::from("/")
-            } else {
-                PathBuf::from(parent_part)
-            };
-            let prepend = if parent_part.is_empty() {
-                "/".to_owned()
-            } else {
-                format!("{parent_part}/")
-            };
-            (base, leaf, prepend)
-        } else {
-            (PathBuf::from("/"), stripped, "/".to_owned())
-        };
-        let hint = compact_hint(&base_dir, home);
-        let candidates = list_directory_candidates(
-            &base_dir,
-            leaf_prefix,
-            &prepend,
-            &hint,
-            leaf_prefix.chars().count(),
-            show_hidden_pref,
-        );
-        let input_path = PathBuf::from(input);
-        if candidates.len() <= 1 && input_path.is_dir() && input != "/" {
-            let child_hint = compact_hint(&input_path, home);
-            let child_prepend = format!("{}/", input.trim_end_matches('/'));
-            let children = list_directory_candidates(
-                &input_path,
-                "",
-                &child_prepend,
-                &child_hint,
-                0,
-                show_hidden_pref,
-            );
-            if !children.is_empty() {
-                return children;
-            }
-        }
+    };
+    let hint = compact_hint(&query.base_dir, home);
+    let candidates = list_directory_candidates(
+        &query.base_dir,
+        query.leaf,
+        &query.prefix,
+        &hint,
+        query.leaf.chars().count(),
+        show_hidden_pref,
+    );
+    if candidates.len() > 1 {
         return candidates;
     }
 
-    if let Some(current) = current_dir {
-        let (base_dir, leaf_prefix) = if input.ends_with('/') {
-            (current.join(input), "")
-        } else if let Some((parent_part, leaf)) = input.rsplit_once('/') {
-            (current.join(parent_part), leaf)
-        } else {
-            (current.to_path_buf(), input)
-        };
-        let prepend = directory_prefix(&base_dir);
-        let hint = compact_hint(&base_dir, home);
-        let candidates = list_directory_candidates(
-            &base_dir,
-            leaf_prefix,
-            &prepend,
-            &hint,
-            leaf_prefix.chars().count(),
-            show_hidden_pref,
-        );
-        let input_path = current.join(input);
-        if candidates.len() <= 1 && input_path.is_dir() && !input.ends_with('/') {
-            let child_hint = compact_hint(&input_path, home);
-            let child_prepend = directory_prefix(&input_path);
-            let children = list_directory_candidates(
-                &input_path,
-                "",
-                &child_prepend,
-                &child_hint,
-                0,
-                show_hidden_pref,
-            );
-            if !children.is_empty() {
-                return children;
-            }
+    // A single match that is itself a folder lists that folder's children instead.
+    let descend = if let Some(relative) = input.strip_prefix("~/") {
+        let relative = relative.trim_start_matches('/');
+        (!relative.is_empty()).then(|| {
+            (
+                home.join(relative),
+                format!("~/{}/", relative.trim_end_matches('/')),
+            )
+        })
+    } else if input.starts_with('/') {
+        (input != "/").then(|| {
+            (
+                PathBuf::from(input),
+                format!("{}/", input.trim_end_matches('/')),
+            )
+        })
+    } else {
+        current_dir
+            .filter(|_| !input.ends_with('/'))
+            .map(|current| {
+                let path = current.join(input);
+                let prefix = directory_prefix(&path);
+                (path, prefix)
+            })
+    };
+    if let Some((path, prefix)) = descend.filter(|(path, _)| path.is_dir()) {
+        let child_hint = compact_hint(&path, home);
+        let children =
+            list_directory_candidates(&path, "", &prefix, &child_hint, 0, show_hidden_pref);
+        if !children.is_empty() {
+            return children;
         }
-        return candidates;
     }
-
-    Vec::new()
+    candidates
 }
 
 fn list_directory_candidates(

@@ -72,7 +72,7 @@ pub use operations::{
     UndoCopyRequest, UndoMergeRequest, UndoMoveItem, UndoMoveRequest, UndoRenameRequest,
     validate_basename,
 };
-pub(crate) use path_match::{PathMatcher, PathQuery};
+pub(crate) use path_match::{PathMatcher, PathQuery, TextScore};
 pub use preview::{
     ArchiveDirectory, ArchiveFileEntry, ArchiveNode, ArchivePreviewTree, MediaPreviewSize,
     ModelPreviewStage, PdfTextLayer, Preview, PreviewContent, PreviewEvent, PreviewProvider,
