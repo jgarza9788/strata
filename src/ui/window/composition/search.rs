@@ -9,14 +9,21 @@ use crate::{
     model::{EntryKind, FileEntry, Location, MetadataValue},
     services::{NavigationHistory, SearchItem},
     ui::{
-        browser::BrowserView, command_palette::CommandPalette, preferences::PreferenceManager,
-        preview::PreviewDrawer, search::SearchDialog,
+        browser::BrowserView,
+        command_palette::{CommandPalette, PaletteSources},
+        preferences::PreferenceManager,
+        preview::PreviewDrawer,
+        search::SearchDialog,
     },
 };
 
 use super::WindowContent;
 
-pub(super) fn install_palette(window: &gtk::ApplicationWindow, content: &WindowContent) {
+pub(super) fn install_palette(
+    window: &gtk::ApplicationWindow,
+    content: &WindowContent,
+    preferences: &Rc<PreferenceManager>,
+) {
     let root = content.blurred_root.downgrade();
     let dismiss = Rc::new(move || {
         if let Some(root) = root.upgrade() {
@@ -30,10 +37,36 @@ pub(super) fn install_palette(window: &gtk::ApplicationWindow, content: &WindowC
                 gtk::prelude::WidgetExt::activate_action(&window, &format!("win.{action}"), None);
         }
     });
-    let palette = CommandPalette::new(run, dismiss);
+    let opened_browser = content.browser.downgrade();
+    let preview = content.preview.clone();
+    let open_path = Rc::new(move |path: std::path::PathBuf, is_dir: bool| {
+        let Some(browser) = opened_browser.upgrade() else {
+            return;
+        };
+        preview.clear_target();
+        if is_dir {
+            browser.browser().navigate(Location::local(path));
+        } else {
+            browser.reveal_location(Location::local(path));
+        }
+    });
+    let scope_preferences = preferences.clone();
+    let sources = PaletteSources {
+        history: NavigationHistory::shared(),
+        zoxide: true,
+        index_scope: Rc::new(move || {
+            (
+                super::super::devices::global_search_roots(),
+                scope_preferences.search_exclusions(),
+            )
+        }),
+    };
+    let palette = CommandPalette::new(run, open_path, dismiss, sources);
     content.overlay.add_overlay(&palette.widget());
     let own_layer = palette.widget();
     let root = content.blurred_root.downgrade();
+    let browser = content.browser.downgrade();
+    let preferences = preferences.clone();
     super::add_guarded_window_action(
         window,
         &content.actions,
@@ -43,9 +76,13 @@ pub(super) fn install_palette(window: &gtk::ApplicationWindow, content: &WindowC
         move || {
             if palette.is_visible() {
                 palette.hide();
-            } else if let Some(root) = root.upgrade() {
+            } else if let (Some(root), Some(browser)) = (root.upgrade(), browser.upgrade()) {
+                let current_dir = browser
+                    .browser()
+                    .active_location()
+                    .and_then(|location| location.native_path().map(std::path::Path::to_path_buf));
                 root.set_blurred(true);
-                palette.show();
+                palette.show(current_dir, preferences.sort_preferences().show_hidden);
             }
         },
     );

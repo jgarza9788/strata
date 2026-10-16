@@ -139,45 +139,56 @@ impl NavigationHistory {
         now: u64,
         excluded: Option<&Path>,
     ) -> Vec<SearchItem> {
-        let query = query.trim();
-        let exact_name = fold_for_search(query);
-        let mut matcher = HistoryMatcher::new(query);
-        let mut matches = self
+        let candidates = self
             .entries
             .borrow()
             .iter()
             .filter(|entry| Some(entry.path.as_path()) != excluded)
-            .filter_map(|entry| {
-                let item = SearchItem::for_history(entry.path.clone());
-                let frecency = frecency_score(entry, now);
-                let score = match matcher.score(&item)? {
-                    None => (frecency * 1_000.0) as i64,
-                    Some(text) => {
-                        let frecency_bonus =
-                            (frecency.max(0.0).ln_1p() * 256.0).min(2_000.0) as i64;
-                        let exact = if item.name_is(&exact_name) {
-                            EXACT_NAME_BONUS
-                        } else {
-                            0
-                        };
-                        path_match::rank(text, frecency_bonus + exact)
-                    }
-                };
-                Some((score, entry.last_accessed, item))
+            .map(|entry| {
+                (
+                    entry.path.clone(),
+                    frecency_score(entry, now),
+                    entry.last_accessed,
+                )
+            })
+            .collect();
+        rank_folders(query, candidates)
+    }
+
+    /// Searches this history merged with folders another tool ranked with the same
+    /// frecency scale, such as zoxide. A folder in both keeps the higher frecency.
+    pub(crate) fn search_with(&self, query: &str, external: &[(PathBuf, f64)]) -> Vec<SearchItem> {
+        self.search_with_at(query, external, unix_time())
+    }
+
+    fn search_with_at(
+        &self,
+        query: &str,
+        external: &[(PathBuf, f64)],
+        now: u64,
+    ) -> Vec<SearchItem> {
+        let mut candidates = self
+            .entries
+            .borrow()
+            .iter()
+            .map(|entry| {
+                (
+                    entry.path.clone(),
+                    frecency_score(entry, now),
+                    entry.last_accessed,
+                )
             })
             .collect::<Vec<_>>();
-        matches.sort_unstable_by(|left, right| {
-            right
-                .0
-                .cmp(&left.0)
-                .then_with(|| right.1.cmp(&left.1))
-                .then_with(|| left.2.path.cmp(&right.2.path))
-        });
-        matches
-            .into_iter()
-            .take(MAX_RESULTS)
-            .map(|(_, _, item)| item)
-            .collect()
+        for (path, frecency) in external {
+            if !path.is_absolute() || !frecency.is_finite() || *frecency <= 0.0 {
+                continue;
+            }
+            match candidates.iter_mut().find(|(known, ..)| known == path) {
+                Some((_, known, _)) => *known = known.max(*frecency),
+                None => candidates.push((path.clone(), *frecency, 0)),
+            }
+        }
+        rank_folders(query, candidates)
     }
 
     pub(crate) fn recent_excluding(&self, query: &str, excluded: Option<&Path>) -> Vec<SearchItem> {
@@ -205,6 +216,44 @@ impl NavigationHistory {
             .map(|(_, item)| item)
             .collect()
     }
+}
+
+/// Ranks `(folder, frecency, last accessed)` candidates against `query`.
+fn rank_folders(query: &str, candidates: Vec<(PathBuf, f64, u64)>) -> Vec<SearchItem> {
+    let query = query.trim();
+    let exact_name = fold_for_search(query);
+    let mut matcher = HistoryMatcher::new(query);
+    let mut matches = candidates
+        .into_iter()
+        .filter_map(|(path, frecency, last_accessed)| {
+            let item = SearchItem::for_history(path);
+            let score = match matcher.score(&item)? {
+                None => (frecency * 1_000.0) as i64,
+                Some(text) => {
+                    let frecency_bonus = (frecency.max(0.0).ln_1p() * 256.0).min(2_000.0) as i64;
+                    let exact = if item.name_is(&exact_name) {
+                        EXACT_NAME_BONUS
+                    } else {
+                        0
+                    };
+                    path_match::rank(text, frecency_bonus + exact)
+                }
+            };
+            Some((score, last_accessed, item))
+        })
+        .collect::<Vec<_>>();
+    matches.sort_unstable_by(|left, right| {
+        right
+            .0
+            .cmp(&left.0)
+            .then_with(|| right.1.cmp(&left.1))
+            .then_with(|| left.2.path.cmp(&right.2.path))
+    });
+    matches
+        .into_iter()
+        .take(MAX_RESULTS)
+        .map(|(_, _, item)| item)
+        .collect()
 }
 
 struct HistoryMatcher(Option<PathMatcher>);

@@ -104,6 +104,7 @@ pub(super) use crate::ui::browser::inline_edit::{queue_rename, reveal_rename_row
 pub(in crate::ui) use crate::ui::browser::listing_filter::{
     FilterFocus, FilterStatus, results_step_target, scroll_results_to, selected_cursor,
 };
+pub(super) use crate::ui::browser::location::completion::{compact_hint, split_path_input};
 pub(super) use crate::ui::browser::pane_header::{
     column_sort_direction_toggle, column_sort_menu, empty_trash_button, pane_new_folder_button,
     pane_refresh_button, sync_column_sort_direction,

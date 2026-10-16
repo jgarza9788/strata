@@ -288,6 +288,28 @@ The command palette lists the window actions that have a `win.*` action, filters
 them by word prefix or substring in English or the interface language, and runs
 the chosen one after the palette closes. **Ctrl+P** or **Esc** closes it.
 
+Below the matching commands, a plain query lists frecent folders and then files:
+
+- Folders come from Strata's folder history merged with zoxide's database
+  (`zoxide query --list --score`) when zoxide is installed. Both use the same
+  frecency scale; a folder in both keeps the higher score. With no query, the
+  most frecent folders are listed.
+- Files and folders stream in from the global search index (the same roots,
+  exclusions, and fuzzy matching as **Ctrl+K**), starting with the first query.
+
+A query starting with `/`, `~`, `./`, or `../` lists that folder's files and
+folders instead, fuzzily matching the text after the last `/` (`~/dcmts` finds
+`~/Documents`). `./` and `../` resolve against the active folder. Hidden entries
+follow the show-hidden preference unless the text starts with `.`.
+
+A query starting with `re:` is a regular expression searched below the active
+folder (eight levels, honoring ignore files). It matches names, or paths
+relative to the active folder when the pattern contains `/`, and ignores case
+unless the pattern contains an uppercase letter: `re:^IMG_\d+\.jpg$`.
+
+**Tab** puts the selected file or folder's path in the field, and a folder then
+lists its contents. Enter opens a folder or reveals a file in its folder.
+
 ### Text fields
 
 When a `gtk::Text` or `gtk::TextView` has focus and a press matched an editing
